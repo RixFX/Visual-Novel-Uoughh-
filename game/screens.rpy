@@ -2,8 +2,11 @@
 ## Initialization
 ################################################################################
 
-init offset = -1
+default keyboard = False
+default mouse = True
+default gamepad = True
 
+init offset = -1
 
 ################################################################################
 ## Styles
@@ -62,13 +65,22 @@ style vscrollbar:
 
 style slider:
     ysize gui.slider_size
-    base_bar Frame("gui/slider/horizontal_[prefix_]bar.png", gui.slider_borders, tile=gui.slider_tile)
-    thumb "gui/slider/horizontal_[prefix_]thumb.png"
+    right_bar Frame("gui/slider/horizontal_empty_bar.png", gui.slider_borders, tile=gui.slider_tile)
+    left_bar Frame("gui/slider/horizontal_full_bar.png", gui.slider_borders, tile=gui.slider_tile)
+    thumb "gui/slider/[prefix_]thumb.png"
+    thumb_offset 30
+    bottom_gutter 25
+    top_gutter 30
+    
 
 style vslider:
     xsize gui.slider_size
-    base_bar Frame("gui/slider/vertical_[prefix_]bar.png", gui.vslider_borders, tile=gui.slider_tile)
-    thumb "gui/slider/vertical_[prefix_]thumb.png"
+    right_bar Frame("gui/slider/vertical_empty_bar.png", gui.slider_borders, tile=gui.slider_tile)
+    left_bar Frame("gui/slider/vertical_full_bar.png", gui.slider_borders, tile=gui.slider_tile)
+    thumb "gui/slider/[prefix_]thumb.png"
+    thumb_offset 30
+    bottom_gutter 25
+    top_gutter 30
 
 
 style frame:
@@ -96,6 +108,7 @@ style frame:
 ## https://www.renpy.org/doc/html/screen_special.html#say
 
 screen say(who, what):
+    style_prefix "say"
 
     window:
         id "window"
@@ -113,7 +126,7 @@ screen say(who, what):
     ## If there's a side image, display it above the text. Do not display on the
     ## phone variant - there's no room.
     if not renpy.variant("small"):
-        add SideImage() xalign 0.0 yalign 1.0
+        add SideImage() xalign 0.0 yalign 1.0 xoffset  -200 yoffset -90
 
 
 ## Make the namebox available for styling through the Character object.
@@ -134,6 +147,7 @@ style window:
     xfill True
     yalign gui.textbox_yalign
     ysize gui.textbox_height
+    xoffset 240
 
     background Image("gui/textbox.png", xalign=0.5, yalign=1.0)
 
@@ -158,6 +172,8 @@ style say_dialogue:
     xpos gui.dialogue_xpos
     xsize gui.dialogue_width
     ypos gui.dialogue_ypos
+    line_spacing 15
+    font "Fonts/SedapKali.ttf"
 
     adjust_spacing False
 
@@ -209,7 +225,10 @@ screen choice(items):
 
     vbox:
         for i in items:
-            textbutton i.caption action i.action
+            textbutton i.caption:
+                action i.action
+                idle_background "gui/button/choice_idle_background.png" focus_mask True
+                hover_background "gui/button/choice_hover_background.png"
 
 
 style choice_vbox is vbox
@@ -228,6 +247,7 @@ style choice_button is default:
 
 style choice_button_text is default:
     properties gui.text_properties("choice_button")
+    font "Fonts/SedapKali.ttf"
 
 
 ## Quick Menu screen ###########################################################
@@ -242,18 +262,53 @@ screen quick_menu():
 
     if quick_menu:
 
-        hbox:
+        vbox:
             style_prefix "quick"
-            style "quick_menu"
 
-            textbutton _("Back") action Rollback()
-            textbutton _("History") action ShowMenu('history')
-            textbutton _("Skip") action Skip() alternate Skip(fast=True, confirm=True)
-            textbutton _("Auto") action Preference("auto-forward", "toggle")
-            textbutton _("Save") action ShowMenu('save')
-            textbutton _("Q.Save") action QuickSave()
-            textbutton _("Q.Load") action QuickLoad()
-            textbutton _("Prefs") action ShowMenu('preferences')
+            xpos 1592
+            ypos 769
+            ysize 283
+
+            imagebutton:
+                    idle "gui/button/history_idle.png"
+                    hover "gui/button/history_hover.png"
+                    hover_foreground Text(_("history"), xalign=0.45, yalign=0.8, color='#f2d983', size=35, font="SedapKali.ttf")
+                    action ShowMenu('history')
+                    top_padding 5
+                    align (0.5, 0.0)
+                    focus_mask True
+
+            imagebutton:
+                    idle "gui/button/auto_idle.png"
+                    hover "gui/button/auto_hover.png"
+                    hover_foreground Text(_("auto"), xalign=0.4, yalign=0.6, color='#f2d983', size=35, font="SedapKali.ttf")
+                    action Preference("auto-forward", "toggle")
+                    align (0.5, 0.0)
+                    focus_mask True
+            
+            imagebutton:
+                    idle "gui/button/skip_idle.png"
+                    hover "gui/button/skip_hover.png"
+                    hover_foreground Text(_("skip"), xalign=0.4, yalign=0.6, color='#f2d983', size=35, font="SedapKali.ttf")
+                    action Skip() alternate Skip(fast=True, confirm=True)
+                    align (0.5, 0.0)
+                    focus_mask True
+
+            imagebutton:
+                    idle "gui/button/qsave_idle.png"
+                    hover "gui/button/qsave_hover.png"
+                    hover_foreground Text(_("quick save"), xalign=0.4, yalign=0.5, color='#f2d983', size=35, font="SedapKali.ttf")
+                    action QuickSave()
+                    align (0.5, 0.0)
+                    focus_mask True
+
+            imagebutton:
+                    idle "gui/button/qload_idle.png"
+                    hover "gui/button/qload_hover.png"
+                    hover_foreground Text(_("quick load"), xalign=0.4, yalign=0.5, color='#f2d983', size=35, font="SedapKali.ttf")
+                    action QuickLoad()
+                    align (0.5, 0.0)
+                    focus_mask True
 
 
 ## This code ensures that the quick_menu screen is displayed in-game, whenever
@@ -263,19 +318,15 @@ init python:
 
 default quick_menu = True
 
-style quick_menu is hbox
 style quick_button is default
 style quick_button_text is button_text
-
-style quick_menu:
-    xalign 0.5
-    yalign 1.0
 
 style quick_button:
     properties gui.button_properties("quick_button")
 
 style quick_button_text:
     properties gui.text_properties("quick_button")
+    
 
 
 ################################################################################
@@ -290,58 +341,90 @@ style quick_button_text:
 screen navigation():
 
     vbox:
-        style_prefix "navigation"
 
         xpos gui.navigation_xpos
-        yalign 0.5
+        ypos 450
 
         spacing gui.navigation_spacing
+        
+        if not main_menu:
+            imagebutton:
+                idle "gui/button/menubutton_idle.png"
+                hover "gui/button/menubutton_hover.png"
+                insensitive "gui/button/menubutton_idle.png"
+                idle_foreground Text(_("History"), xalign=.0, yalign=0.5, xpos=300, color='#f2d983')
+                hover_foreground Text(_("History"), xalign=.0, yalign=0.5, xpos=300, color='#161832')
+                insensitive_foreground Text(_("History"), xalign=.0, yalign=0.5, xpos=300, color='#fff')
+                action ShowMenu("history")
+                focus_mask True
 
-        if main_menu:
+            imagebutton:
+                idle "gui/button/menubutton_idle.png"
+                hover "gui/button/menubutton_hover.png"
+                insensitive "gui/button/menubutton_idle.png"
+                idle_foreground Text(_("Save"), xalign=.0, yalign=0.5, xpos=300, color='#f2d983')
+                hover_foreground Text(_("Save"), xalign=.0, yalign=0.5, xpos=300, color='#161832')
+                insensitive_foreground Text(_("Save"), xalign=.0, yalign=0.5, xpos=300, color='#fff')
+                action ShowMenu("save")
+                focus_mask True
 
-            textbutton _("Start") action Start()
+        imagebutton:
+            idle "gui/button/menubutton_idle.png"
+            hover "gui/button/menubutton_hover.png"
+            insensitive "gui/button/menubutton_idle.png"
+            idle_foreground Text(_("Load"), xalign=.0, yalign=0.5, xpos=300, color='#f2d983')
+            hover_foreground Text(_("Load"), xalign=.0, yalign=0.5, xpos=300, color='#161832')
+            insensitive_foreground Text(_("Load"), xalign=.0, yalign=0.5, xpos=300, color='#fff')
+            action ShowMenu("load")
+            focus_mask True
 
-        else:
+        imagebutton:
+            idle "gui/button/menubutton_idle.png"
+            hover "gui/button/menubutton_hover.png"
+            insensitive "gui/button/menubutton_idle.png"
+            idle_foreground Text(_("Settings"), xalign=.0, yalign=0.5, xpos=300, color='#f2d983')
+            hover_foreground Text(_("Settings"), xalign=.0, yalign=0.5, xpos=300, color='#161832')
+            insensitive_foreground Text(_("Settings"), xalign=.0, yalign=0.5, xpos=300, color='#fff')
+            action ShowMenu("settings")
+            focus_mask True
 
-            textbutton _("History") action ShowMenu("history")
-
-            textbutton _("Save") action ShowMenu("save")
-
-        textbutton _("Load") action ShowMenu("load")
-
-        textbutton _("Preferences") action ShowMenu("preferences")
-
-        if _in_replay:
-
-            textbutton _("End Replay") action EndReplay(confirm=True)
-
-        elif not main_menu:
-
-            textbutton _("Main Menu") action MainMenu()
-
-        textbutton _("About") action ShowMenu("about")
+        imagebutton:
+            idle "gui/button/menubutton_idle.png"
+            hover "gui/button/menubutton_hover.png"
+            insensitive "gui/button/menubutton_idle.png"
+            idle_foreground Text(_("Credits"), xalign=.0, yalign=0.5, xpos=300, color='#f2d983')
+            hover_foreground Text(_("Credits"), xalign=.0, yalign=0.5, xpos=300, color='#161832')
+            insensitive_foreground Text(_("Credits"), xalign=.0, yalign=0.5, xpos=300, color='#fff')
+            action ShowMenu("credits")
+            focus_mask True
 
         if renpy.variant("pc") or (renpy.variant("web") and not renpy.variant("mobile")):
+            imagebutton:
+                idle "gui/button/menubutton_idle.png"
+                hover "gui/button/menubutton_hover.png"
+                insensitive "gui/button/menubutton_idle.png"
+                idle_foreground Text(_("Help"), xalign=.0, yalign=0.5, xpos=300, color='#f2d983')
+                hover_foreground Text(_("Help"), xalign=.0, yalign=0.5, xpos=300, color='#161832')
+                insensitive_foreground Text(_("Help"), xalign=.0, yalign=0.5, xpos=300, color='#fff')
+                action [SetVariable("keyboard", False), SetVariable("mouse", True), SetVariable("gamepad", True), ShowMenu("help")]
+                focus_mask True
 
-            ## Help isn't necessary or relevant to mobile devices.
-            textbutton _("Help") action ShowMenu("help")
+        if not main_menu:
+            imagebutton:
+                idle "gui/button/menubutton_idle.png"
+                hover "gui/button/menubutton_hover.png"
+                idle_foreground Text(_("Main Menu"), xalign=.0, yalign=0.5, xpos=300, color='#f2d983')
+                hover_foreground Text(_("Main Menu"), xalign=.0, yalign=0.5, xpos=300, color='#161832')
+                action MainMenu()
+                focus_mask True
 
-        if renpy.variant("pc"):
-
-            ## The quit button is banned on iOS and unnecessary on Android and
-            ## Web.
-            textbutton _("Quit") action Quit(confirm=not main_menu)
-
-
-style navigation_button is gui_button
-style navigation_button_text is gui_button_text
-
-style navigation_button:
-    size_group "navigation"
-    properties gui.button_properties("navigation_button")
-
-style navigation_button_text:
-    properties gui.text_properties("navigation_button")
+    imagebutton:
+            idle "gui/button/back_idle.png"
+            hover "gui/button/back_hover.png"
+            action Return()
+            focus_mask True
+            xpos 10
+            ypos 0
 
 
 ## Main Menu screen ############################################################
@@ -349,45 +432,69 @@ style navigation_button_text:
 ## Used to display the main menu when Ren'Py starts.
 ##
 ## https://www.renpy.org/doc/html/screen_special.html#main-menu
+image main_menu = Movie(size=(1920, 1080), play="gui/main_menu.webm")
 
 screen main_menu():
 
     ## This ensures that any other menu screen is replaced.
     tag menu
 
-    add gui.main_menu_background
-
-    ## This empty frame darkens the main menu.
-    frame:
-        style "main_menu_frame"
+    add "main_menu"
+    add "gui/title.png":
+        xpos 610
+        ypos 130
 
     ## The use statement includes another screen inside this one. The actual
     ## contents of the main menu are in the navigation screen.
-    use navigation
 
-    if gui.show_name:
+    vbox:
+            align (0.5, 0.85)
 
-        vbox:
-            style "main_menu_vbox"
+            imagebutton:
+                    idle "gui/button/menubutton_idle.png"
+                    hover "gui/button/menubutton_hover.png"
+                    idle_foreground Text(_("New Game"), xalign=0.5, yalign=0.6, color='#f2d983', size=50)
+                    hover_foreground Text(_("New Game"), xalign=0.5, yalign=0.6, color='#161832', size=50)
+                    action Start()
+                    focus_mask True
 
-            text "[config.name!t]":
-                style "main_menu_title"
+            imagebutton:
+                    idle "gui/button/menubutton_idle.png"
+                    hover "gui/button/menubutton_hover.png"
+                    idle_foreground Text(_("Load Game"), xalign=0.5, yalign=0.6, color='#f2d983', size=50)
+                    hover_foreground Text(_("Load Game"), xalign=0.5, yalign=0.6, color='#161832', size=50)
+                    action ShowMenu('load')
+                    focus_mask True
 
-            text "[config.version]":
-                style "main_menu_version"
+            imagebutton:
+                    idle "gui/button/menubutton_idle.png"
+                    hover "gui/button/menubutton_hover.png"
+                    idle_foreground Text(_("Settings"), xalign=0.5, yalign=0.6, color='#f2d983', size=50)
+                    hover_foreground Text(_("Settings"), xalign=0.5, yalign=0.6, color='#161832', size=50)
+                    action [SetVariable("settings", False), ShowMenu('settings')]
+                    focus_mask True
+
+            imagebutton:
+                    idle "gui/button/menubutton_idle.png"
+                    hover "gui/button/menubutton_hover.png"
+                    idle_foreground Text(_("Credits"), xalign=0.5, yalign=0.6, color='#f2d983', size=50)
+                    hover_foreground Text(_("Credits"), xalign=0.5, yalign=0.6, color='#161832', size=50)
+                    action ShowMenu('credits')
+                    focus_mask True
+
+            imagebutton:
+                    idle "gui/button/menubutton_idle.png"
+                    hover "gui/button/menubutton_hover.png"
+                    idle_foreground Text(_("Quit"), xalign=0.5, yalign=0.6, color='#f2d983', size=50)
+                    hover_foreground Text(_("Quit"), xalign=0.5, yalign=0.6, color='#161832', size=50)
+                    action Quit(confirm=not main_menu)
+                    focus_mask True
 
 
 style main_menu_frame is empty
 style main_menu_vbox is vbox
 style main_menu_text is gui_text
-style main_menu_title is main_menu_text
 style main_menu_version is main_menu_text
-
-style main_menu_frame:
-    xsize 420
-    yfill True
-
-    background "gui/overlay/main_menu.png"
 
 style main_menu_vbox:
     xalign 1.0
@@ -398,12 +505,6 @@ style main_menu_vbox:
 
 style main_menu_text:
     properties gui.text_properties("main_menu", accent=True)
-
-style main_menu_title:
-    properties gui.text_properties("title")
-
-style main_menu_version:
-    properties gui.text_properties("version")
 
 
 ## Game Menu screen ############################################################
@@ -417,12 +518,9 @@ style main_menu_version:
 
 screen game_menu(title, scroll=None, yinitial=0.0, spacing=0):
 
-    style_prefix "game_menu"
+    tag menu
 
-    if main_menu:
-        add gui.main_menu_background
-    else:
-        add gui.game_menu_background
+    style_prefix "game_menu"
 
     frame:
         style "game_menu_outer_frame"
@@ -475,16 +573,8 @@ screen game_menu(title, scroll=None, yinitial=0.0, spacing=0):
 
     use navigation
 
-    textbutton _("Return"):
-        style "return_button"
-
-        action Return()
-
-    label title
-
     if main_menu:
         key "game_menu" action ShowMenu("main_menu")
-
 
 style game_menu_outer_frame is empty
 style game_menu_navigation_frame is empty
@@ -500,22 +590,19 @@ style return_button is navigation_button
 style return_button_text is navigation_button_text
 
 style game_menu_outer_frame:
-    bottom_padding 45
-    top_padding 180
-
-    background "gui/overlay/game_menu.png"
+    bottom_padding 80
 
 style game_menu_navigation_frame:
     xsize 420
     yfill True
 
 style game_menu_content_frame:
-    left_margin 60
+    left_margin 100
     right_margin 30
-    top_margin 15
 
 style game_menu_viewport:
-    xsize 1380
+    xsize 1300
+    top_padding 100
 
 style game_menu_vscrollbar:
     unscrollable gui.unscrollable
@@ -528,7 +615,7 @@ style game_menu_label:
     ysize 180
 
 style game_menu_label_text:
-    size 75
+    size gui.title_text_size
     color gui.accent_color
     yalign 0.5
 
@@ -538,35 +625,151 @@ style return_button:
     yoffset -45
 
 
-## About screen ################################################################
+
+
+screen second_menu(title, scroll=None, yinitial=0.0, spacing=0):
+
+    tag menu
+
+    style_prefix "second_menu"
+
+    frame:
+        style "second_menu_outer_frame"
+
+        hbox:
+
+            ## Reserve space for the navigation section.
+            frame:
+                style "second_menu_navigation_frame"
+
+            frame:
+                style "second_menu_content_frame"
+
+                if scroll == "viewport":
+
+                    viewport:
+                        yinitial yinitial
+                        scrollbars "vertical"
+                        mousewheel True
+                        draggable True
+                        pagekeys True
+
+                        side_yfill True
+
+                        vbox:
+                            spacing spacing
+
+                            transclude
+
+                elif scroll == "vpgrid":
+
+                    vpgrid:
+                        cols 1
+                        yinitial yinitial
+
+                        scrollbars "vertical"
+                        mousewheel True
+                        draggable True
+                        pagekeys True
+
+                        side_yfill True
+
+                        spacing spacing
+
+                        transclude
+
+                else:
+
+                    transclude
+
+    use navigation
+
+    if main_menu:
+        key "game_menu" action ShowMenu("main_menu")
+
+style second_menu_outer_frame is empty
+style second_menu_navigation_frame is empty
+style second_menu_content_frame is empty
+style second_menu_viewport is gui_viewport
+style second_menu_side is gui_side
+style second_menu_scrollbar is gui_vscrollbar
+
+style second_menu_label is gui_label
+style second_menu_label_text is gui_label_text
+
+style return_button is navigation_button
+style return_button_text is navigation_button_text
+
+style second_menu_outer_frame:
+    bottom_padding 80
+    top_padding 180
+
+style second_menu_navigation_frame:
+    xsize 420
+    yfill True
+
+style second_menu_content_frame:
+    left_margin 100
+    right_margin 30
+
+style second_menu_viewport:
+    xsize 1300
+    top_padding 100
+
+style second_menu_vscrollbar:
+    unscrollable gui.unscrollable
+
+style second_menu_side:
+    spacing 15
+
+style second_menu_label:
+    xpos 75
+    ysize 180
+
+style second_menu_label_text:
+    size gui.title_text_size
+    color gui.accent_color
+    yalign 0.5
+
+style return_button:
+    xpos gui.navigation_xpos
+    yalign 1.0
+    yoffset -45
+
+
+## Credits screen ################################################################
 ##
 ## This screen gives credit and copyright information about the game and Ren'Py.
 ##
 ## There's nothing special about this screen, and hence it also serves as an
 ## example of how to make a custom screen.
 
-screen about():
+screen credits():
 
     tag menu
+
+    add "gui/game_menu.jpg"
+
+    text "{color=#f2d983}{size=90}CREDITS":
+        xpos 50
+        ypos 150
 
     ## This use statement includes the game_menu screen inside this one. The
     ## vbox child is then included inside the viewport inside the game_menu
     ## screen.
-    use game_menu(_("About"), scroll="viewport"):
+    use second_menu(_("Credits"), scroll="viewport"):
 
         style_prefix "about"
 
         vbox:
+                label "[config.name!t]"
+                text _("Version [config.version!t]\n")
 
-            label "[config.name!t]"
-            text _("Version [config.version!t]\n")
+                ## gui.about is usually set in options.rpy.
+                if gui.about:
+                    text "[gui.about!t]\n"
 
-            ## gui.about is usually set in options.rpy.
-            if gui.about:
-                text "[gui.about!t]\n"
-
-            text _("Made with {a=https://www.renpy.org/}Ren'Py{/a} [renpy.version_only].\n\n[renpy.license!t]")
-
+                text _("Made with {a=https://www.renpy.org/}Ren'Py{/a} [renpy.version_only].\n\n[renpy.license!t]")
 
 style about_label is gui_label
 style about_label_text is gui_label_text
@@ -584,25 +787,35 @@ style about_label_text:
 ##
 ## https://www.renpy.org/doc/html/screen_special.html#save https://
 ## www.renpy.org/doc/html/screen_special.html#load
-
 screen save():
 
     tag menu
 
+    add "gui/save_menu.jpg"
+
     use file_slots(_("Save"))
 
+    text "{color=#f2d983}{size=120}SAVE":
+        xpos 50
+        ypos 125
 
 screen load():
 
     tag menu
 
+    add "gui/save_menu.jpg"
+
     use file_slots(_("Load"))
+
+    text "{color=#f2d983}{size=120}LOAD":
+        xpos 50
+        ypos 125
 
 
 screen file_slots(title):
 
-    default page_name_value = FilePageNameInputValue(pattern=_("Page {}"), auto=_("Automatic saves"), quick=_("Quick saves"))
-
+    default page_name_value = FilePageNameInputValue(pattern=_("Page {}"), auto=_("Auto saves"), quick=_("Quick saves"))
+    
     use game_menu(title):
 
         fixed:
@@ -610,53 +823,103 @@ screen file_slots(title):
             ## This ensures the input will get the enter event before any of the
             ## buttons do.
             order_reverse True
-
-            ## The page name, which can be edited by clicking on a button.
-            button:
-                style "page_label"
-
-                key_events True
+        
+            vbox:
                 xalign 0.5
-                action page_name_value.Toggle()
 
-                input:
-                    style "page_label_text"
-                    value page_name_value
+                ## The page name, which can be edited by clicking on a button.
+                button:
+                    style "page_label"
+
+                    key_events True
+                    action page_name_value.Toggle()
+
+                    input:
+                        style "page_label_text"
+                        value page_name_value
 
             ## The grid of file slots.
-            grid gui.file_slot_cols gui.file_slot_rows:
+            vbox:
                 style_prefix "slot"
 
-                xalign 0.5
-                yalign 0.5
+                xpos 60
+                ypos 60
 
                 spacing gui.slot_spacing
 
                 for i in range(gui.file_slot_cols * gui.file_slot_rows):
 
                     $ slot = i + 1
-
+                    
                     button:
                         action FileAction(slot)
 
                         has vbox
 
-                        add FileScreenshot(slot) xalign 0.5
+                        add FileScreenshot(slot):
+                            xpos 3
+                            ypos 33
 
-                        text FileTime(slot, format=_("{#file_time}%A, %B %d %Y, %H:%M"), empty=_("empty slot")):
+                        text FileTime(slot, format=_("{#file_time}%d %B %Y, %H:%M"), empty=_("empty slot")):
                             style "slot_time_text"
+                            xalign 0.5
 
                         text FileSaveName(slot):
                             style "slot_name_text"
 
                         key "save_delete" action FileDelete(slot)
 
+                        imagebutton:
+                            idle "gui/button/delete_idle.png"
+                            hover "gui/button/delete_hover.png"
+                            action FileDelete(slot)
+                            xpos 530
+                            ypos -350
+
+            vbox:
+                style_prefix "slot"
+
+                xpos 730
+                ypos 180
+
+                spacing gui.slot_spacing
+
+                for i in range(gui.file_slot_cols * gui.file_slot_rows):
+
+                    $ slot = i + 4
+
+                    button:
+                        action FileAction(slot)
+
+                        has vbox
+
+                        add FileScreenshot(slot):
+                            xpos 3
+                            ypos 33
+
+                        text FileTime(slot, format=_("{#file_time}%d %B %Y, %H:%M"), empty=_("empty slot")):
+                            style "slot_time_text"
+                            xalign 0.5
+                            
+
+                        text FileSaveName(slot):
+                            style "slot_name_text"
+
+                        key "save_delete" action FileDelete(slot)
+
+                        imagebutton:
+                            idle "gui/button/delete_idle.png"
+                            hover "gui/button/delete_hover.png"
+                            action FileDelete(slot)
+                            xpos 530
+                            ypos -350
+
             ## Buttons to access other pages.
             vbox:
                 style_prefix "page"
 
-                xalign 0.5
-                yalign 1.0
+                xpos 40
+                ypos 920
 
                 hbox:
                     xalign 0.5
@@ -664,7 +927,6 @@ screen file_slots(title):
                     spacing gui.page_spacing
 
                     textbutton _("<") action FilePagePrevious()
-                    key "save_page_prev" action FilePagePrevious()
 
                     if config.has_autosave:
                         textbutton _("{#auto_page}A") action FilePage("auto")
@@ -677,7 +939,6 @@ screen file_slots(title):
                         textbutton "[page]" action FilePage(page)
 
                     textbutton _(">") action FilePageNext()
-                    key "save_page_next" action FilePageNext()
 
                 if config.has_sync:
                     if CurrentScreenName() == "save":
@@ -701,14 +962,13 @@ style slot_time_text is slot_button_text
 style slot_name_text is slot_button_text
 
 style page_label:
-    xpadding 75
-    ypadding 5
-    xalign 0.5
+    xpos 330
+    ypos 40
 
 style page_label_text:
     textalign 0.5
     layout "subtitle"
-    hover_color gui.hover_color
+    hover_color "#fff"
 
 style page_button:
     properties gui.button_properties("page_button")
@@ -720,23 +980,34 @@ style slot_button:
     properties gui.button_properties("slot_button")
 
 style slot_button_text:
-    properties gui.text_properties("slot_button")
+    font "SedapKali.ttf"
+    color "#161832"
+    xpos 140
+    ypos 65
 
 
-## Preferences screen ##########################################################
+## Settings screen ##########################################################
 ##
-## The preferences screen allows the player to configure the game to better suit
+## The Settings screen allows the player to configure the game to better suit
 ## themselves.
 ##
 ## https://www.renpy.org/doc/html/screen_special.html#preferences
 
-screen preferences():
+screen settings():
 
     tag menu
 
-    use game_menu(_("Preferences"), scroll="viewport"):
+    add "gui/game_menu.jpg"
+
+    text "{color=#f2d983}{size=80}SETTINGS":
+        xpos 50
+        ypos 150
+
+    use game_menu("Settings"):
 
         vbox:
+            xpos 100
+            ypos 150
 
             hbox:
                 box_wrap True
@@ -744,17 +1015,29 @@ screen preferences():
                 if renpy.variant("pc") or renpy.variant("web"):
 
                     vbox:
+                        spacing 10
                         style_prefix "radio"
                         label _("Display")
-                        textbutton _("Window") action Preference("display", "window")
-                        textbutton _("Fullscreen") action Preference("display", "fullscreen")
+                        textbutton _("Window"):
+                            text_font "Fonts/SedapKali.ttf"
+                            action Preference("display", "window")
+                        textbutton _("Fullscreen"):
+                            text_font "Fonts/SedapKali.ttf"
+                            action Preference("display", "fullscreen")
 
                 vbox:
+                    spacing 10
                     style_prefix "check"
                     label _("Skip")
-                    textbutton _("Unseen Text") action Preference("skip", "toggle")
-                    textbutton _("After Choices") action Preference("after choices", "toggle")
-                    textbutton _("Transitions") action InvertSelected(Preference("transitions", "toggle"))
+                    textbutton _("Unseen Text"):
+                            text_font "Fonts/SedapKali.ttf"
+                            action Preference("skip", "toggle")
+                    textbutton _("After Choices"):
+                            text_font "Fonts/SedapKali.ttf"
+                            action Preference("after choices", "toggle")
+                    textbutton _("Transitions"):
+                            text_font "Fonts/SedapKali.ttf"
+                            action InvertSelected(Preference("transitions", "toggle"))
 
                 ## Additional vboxes of type "radio_pref" or "check_pref" can be
                 ## added here, to add additional creator-defined preferences.
@@ -766,6 +1049,7 @@ screen preferences():
                 box_wrap True
 
                 vbox:
+                    spacing 10
 
                     label _("Text Speed")
 
@@ -776,6 +1060,7 @@ screen preferences():
                     bar value Preference("auto-forward time")
 
                 vbox:
+                    spacing 10
 
                     if config.has_music:
                         label _("Music Volume")
@@ -894,10 +1179,16 @@ screen history():
 
     tag menu
 
+    add "gui/game_menu.jpg"
+
+    text "{color=#f2d983}{size=80}HISTORY":
+        xpos 50
+        ypos 150
+
     ## Avoid predicting this screen, as it can be very large.
     predict False
 
-    use game_menu(_("History"), scroll=("vpgrid" if gui.history_height else "viewport"), yinitial=1.0, spacing=gui.history_spacing):
+    use second_menu(_("History"), scroll=("vpgrid" if gui.history_height else "viewport"), yinitial=1.0, spacing=gui.history_spacing):
 
         style_prefix "history"
 
@@ -923,9 +1214,12 @@ screen history():
                 $ what = renpy.filter_text_tags(h.what, allow=gui.history_allow_tags)
                 text what:
                     substitute False
+                    color "#fff"
+                    font "Fonts/SedapKali.ttf"
 
         if not _history_list:
-            label _("The dialogue history is empty.")
+            label _("The dialogue history is empty."):
+                ypos 100
 
 
 ## This determines what tags are allowed to be displayed on the history screen.
@@ -982,132 +1276,170 @@ screen help():
 
     tag menu
 
+    add "gui/game_menu.jpg"
+
+    text "{color=#f2d983}{size=120}HELP":
+        xpos 60
+        ypos 130
+
     default device = "keyboard"
 
     use game_menu(_("Help"), scroll="viewport"):
 
         style_prefix "help"
 
-        vbox:
-            spacing 23
+        hbox:
+                imagebutton:
+                    idle "gui/button/helpbutton_idle.png"
+                    hover "gui/button/helpbutton_hover.png"
+                    insensitive "gui/button/helpbutton_selected.png"
+                    idle_foreground Text(_("Keyboard"), xalign=0.5, yalign=0.3, color='#f2d983')
+                    hover_foreground Text(_("Keyboard"), xalign=0.5, yalign=0.3, color='#f2d983')
+                    insensitive_foreground Text(_("Keyboard"), xalign=0.5, yalign=0.4, color='#161832', size=50)
+                    action [ SensitiveIf(keyboard), SetVariable("mouse", True), SetVariable("gamepad", True), SetVariable("keyboard", False), SetScreenVariable("device", "keyboard")]
+                    focus_mask True
 
-            hbox:
-
-                textbutton _("Keyboard") action SetScreenVariable("device", "keyboard")
-                textbutton _("Mouse") action SetScreenVariable("device", "mouse")
+                imagebutton:
+                    idle "gui/button/helpbutton_idle.png"
+                    hover "gui/button/helpbutton_hover.png"
+                    insensitive "gui/button/helpbutton_selected.png"
+                    idle_foreground Text(_("Mouse"), xalign=0.5, yalign=0.3, color='#f2d983')
+                    hover_foreground Text(_("Mouse"), xalign=0.5, yalign=0.3, color='#f2d983')
+                    insensitive_foreground Text(_("Mouse"), xalign=0.5, yalign=0.4, color='#161832', size=50)
+                    action [ SensitiveIf(mouse), SetVariable("keyboard", True), SetVariable("gamepad", True), SetVariable("mouse", False), SetScreenVariable("device", "mouse")]
+                    focus_mask True
 
                 if GamepadExists():
-                    textbutton _("Gamepad") action SetScreenVariable("device", "gamepad")
+                    imagebutton:
+                        idle "gui/button/helpbutton_idle.png"
+                        hover "gui/button/helpbutton_hover.png"
+                        insensitive "gui/button/helpbutton_selected.png"
+                        idle_foreground Text(_("Gamepad"), xalign=0.5, yalign=0.3, color='#f2d983')
+                        hover_foreground Text(_("Gamepad"), xalign=0.5, yalign=0.3, color='#f2d983')
+                        insensitive_foreground Text(_("Gamepad"), xalign=0.5, yalign=0.4, color='#161832', size=50)
+                        action [ SensitiveIf(gamepad), SetVariable("keyboard", True), SetVariable("mouse", True), SetVariable("gamepad", False), SetScreenVariable("device", "gamepad")]
+                        focus_mask True
 
-            if device == "keyboard":
+        if device == "keyboard":
                 use keyboard_help
-            elif device == "mouse":
+        elif device == "mouse":
                 use mouse_help
-            elif device == "gamepad":
+        elif device == "gamepad":
                 use gamepad_help
 
 
 screen keyboard_help():
 
-    hbox:
-        label _("Enter")
-        text _("Advances dialogue and activates the interface.")
+    vbox:
+        ypos 100
+        spacing 23
+        hbox:
+            label _("Enter")
+            text _("Advances dialogue and activates the interface.")
 
-    hbox:
-        label _("Space")
-        text _("Advances dialogue without selecting choices.")
+        hbox:
+            label _("Space")
+            text _("Advances dialogue without selecting choices.")
 
-    hbox:
-        label _("Arrow Keys")
-        text _("Navigate the interface.")
+        hbox:
+            label _("Arrow Keys")
+            text _("Navigate the interface.")
 
-    hbox:
-        label _("Escape")
-        text _("Accesses the game menu.")
+        hbox:
+            label _("Escape")
+            text _("Accesses the game menu.")
 
-    hbox:
-        label _("Ctrl")
-        text _("Skips dialogue while held down.")
+        hbox:
+            label _("Ctrl")
+            text _("Skips dialogue while held down.")
 
-    hbox:
-        label _("Tab")
-        text _("Toggles dialogue skipping.")
+        hbox:
+            label _("Tab")
+            text _("Toggles dialogue skipping.")
 
-    hbox:
-        label _("Page Up")
-        text _("Rolls back to earlier dialogue.")
+        hbox:
+            label _("Page Up")
+            text _("Rolls back to earlier dialogue.")
 
-    hbox:
-        label _("Page Down")
-        text _("Rolls forward to later dialogue.")
+        hbox:
+            label _("Page Down")
+            text _("Rolls forward to later dialogue.")
 
-    hbox:
-        label "H"
-        text _("Hides the user interface.")
+        hbox:
+            label "H"
+            text _("Hides the user interface.")
 
-    hbox:
-        label "S"
-        text _("Takes a screenshot.")
+        hbox:
+            label "S"
+            text _("Takes a screenshot.")
 
-    hbox:
-        label "V"
-        text _("Toggles assistive {a=https://www.renpy.org/l/voicing}self-voicing{/a}.")
+        hbox:
+            label "V"
+            text _("Toggles assistive {a=https://www.renpy.org/l/voicing}self-voicing{/a}.")
 
-    hbox:
-        label "Shift+A"
-        text _("Opens the accessibility menu.")
+        hbox:
+            label "Shift+A"
+            text _("Opens the accessibility menu.")
 
 
 screen mouse_help():
 
-    hbox:
-        label _("Left Click")
-        text _("Advances dialogue and activates the interface.")
+    vbox:
+        ypos 100
+        spacing 23
 
-    hbox:
-        label _("Middle Click")
-        text _("Hides the user interface.")
+        hbox:
+            label _("Left Click")
+            text _("Advances dialogue and activates the interface.")
 
-    hbox:
-        label _("Right Click")
-        text _("Accesses the game menu.")
+        hbox:
+            label _("Middle Click")
+            text _("Hides the user interface.")
 
-    hbox:
-        label _("Mouse Wheel Up")
-        text _("Rolls back to earlier dialogue.")
+        hbox:
+            label _("Right Click")
+            text _("Accesses the game menu.")
 
-    hbox:
-        label _("Mouse Wheel Down")
-        text _("Rolls forward to later dialogue.")
+        hbox:
+            label _("Mouse Wheel Up")
+            text _("Rolls back to earlier dialogue.")
+
+        hbox:
+            label _("Mouse Wheel Down")
+            text _("Rolls forward to later dialogue.")
 
 
 screen gamepad_help():
 
-    hbox:
-        label _("Right Trigger\nA/Bottom Button")
-        text _("Advances dialogue and activates the interface.")
+    vbox:
+        ypos 100
+        spacing 23
 
-    hbox:
-        label _("Left Trigger\nLeft Shoulder")
-        text _("Rolls back to earlier dialogue.")
+        hbox:
+            label _("Right Trigger\nA/Bottom Button")
+            text _("Advances dialogue and activates the interface.")
 
-    hbox:
-        label _("Right Shoulder")
-        text _("Rolls forward to later dialogue.")
+        hbox:
+            label _("Left Trigger\nLeft Shoulder")
+            text _("Rolls back to earlier dialogue.")
 
-    hbox:
-        label _("D-Pad, Sticks")
-        text _("Navigate the interface.")
+        hbox:
+            label _("Right Shoulder")
+            text _("Rolls forward to later dialogue.")
 
-    hbox:
-        label _("Start, Guide, B/Right Button")
-        text _("Accesses the game menu.")
+        hbox:
+            label _("D-Pad, Sticks")
+            text _("Navigate the interface.")
 
-    hbox:
-        label _("Y/Top Button")
-        text _("Hides the user interface.")
+        hbox:
+            label _("Start, Guide, B/Right Button")
+            text _("Accesses the game menu.")
 
-    textbutton _("Calibrate") action GamepadCalibrate()
+        hbox:
+            label _("Y/Top Button")
+            text _("Hides the user interface.")
+
+        textbutton _("Calibrate") action GamepadCalibrate()
 
 
 style help_button is gui_button
@@ -1131,6 +1463,10 @@ style help_label_text:
     size gui.text_size
     xalign 1.0
     textalign 1.0
+
+style help_text:
+    font "Fonts/SedapKali.ttf"
+    ypos 5
 
 
 
@@ -1251,6 +1587,7 @@ style skip_frame:
 
 style skip_text:
     size gui.notify_text_size
+    color "#f2d983"
 
 style skip_triangle:
     ## We have to use a font that has the BLACK RIGHT-POINTING SMALL TRIANGLE
@@ -1288,13 +1625,14 @@ style notify_frame is empty
 style notify_text is gui_text
 
 style notify_frame:
-    ypos gui.notify_ypos
+    align gui.notify_align
 
     background Frame("gui/notify.png", gui.notify_frame_borders, tile=gui.frame_tile)
     padding gui.notify_frame_borders.padding
 
 style notify_text:
     properties gui.text_properties("notify")
+    color "#f2d983"
 
 
 ## NVL screen ##################################################################
@@ -1442,10 +1780,6 @@ screen bubble(who, what):
         text what:
             id "what"
 
-        default ctc = None
-        showif ctc:
-            add ctc
-
 style bubble_window is empty
 style bubble_namebox is empty
 style bubble_who is default
@@ -1527,8 +1861,10 @@ screen quick_menu():
     if quick_menu:
 
         hbox:
-            style "quick_menu"
             style_prefix "quick"
+
+            xalign 0.5
+            yalign 1.0
 
             textbutton _("Back") action Rollback()
             textbutton _("Skip") action Skip() alternate Skip(fast=True, confirm=True)
@@ -1567,10 +1903,6 @@ style game_menu_navigation_frame:
 style game_menu_content_frame:
     variant "small"
     top_margin 0
-
-style game_menu_viewport:
-    variant "small"
-    xsize 1305
 
 style pref_vbox:
     variant "small"
